@@ -12,6 +12,8 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Shape;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import fonts.FontManager;
@@ -61,6 +63,9 @@ abstract public class Graphics
 	static private final Image _ICONS24 = new Image((Object.class).getResourceAsStream(Paths.IMAGES + "icons24.png"));
 	static private final Image _ICONS16 = new Image((Object.class).getResourceAsStream(Paths.IMAGES + "icons16.png"));
 
+	static private final float _NAMESPACE_RADIUS = 1.5f;
+	static private final byte _ELLIPSIS_RADIUS = 2;
+
 
 	static public Background COLOR_BACKGROUND(Color color)
 	{
@@ -105,6 +110,33 @@ abstract public class Graphics
 		f.setFont(font != null ? font : FontManager.INSTANCE.getFont());
 		f.setMouseTransparent(true);
 		return f;
+	}
+
+
+	static public Shape DRAW_ELLIPSIS()
+	{
+		Circle c1 = new Circle(DOUBLE, DOUBLE, DOUBLE);
+		Circle c2 = new Circle(3 * DOUBLE + THIN, DOUBLE, DOUBLE);
+		Shape s = Shape.union(c1, c2);
+		s.setFill(TEXT_COLOR);
+		s.setMouseTransparent(true);
+		return s;
+	}
+
+
+	static public Shape DRAW_NAMESPACE()
+	{
+		float v = 3 * _NAMESPACE_RADIUS + THIN;
+		Circle c1 = new Circle(_NAMESPACE_RADIUS, _NAMESPACE_RADIUS, _NAMESPACE_RADIUS);
+		Circle c2 = new Circle(v, _NAMESPACE_RADIUS, _NAMESPACE_RADIUS);
+		Shape s = Shape.union(c1, c2);
+		c1 = new Circle(_NAMESPACE_RADIUS, v, _NAMESPACE_RADIUS);
+		s = Shape.union(s, c1);
+		c1 = new Circle(v, v, _NAMESPACE_RADIUS);
+		s = Shape.union(s, c1);
+		s.setFill(BLUE); // union perds le remplissage ??
+		s.setMouseTransparent(true);
+		return s;
 	}
 
 

@@ -10,16 +10,15 @@ import javafx.scene.text.Text;
 import data.Category;
 import data.Documentation;
 import data.Type;
-import events.KeyboardManager;
 import events.NavigationEvent;
+import main.Launcher;
 import main.Strings;
 import ui.Graphics;
 
 
 public final class MenuBar extends Region
 {
-	static final byte MIN_HEIGHT = 28;
-	static final byte MAX_HEIGHT = MIN_HEIGHT + Graphics.PADDING;
+	static final byte HEIGHT = 28;
 
 	static private final byte _MARGIN = 8;
 	static private final byte _ICONS_ROW = 2;
@@ -39,8 +38,8 @@ public final class MenuBar extends Region
 	MenuBar()
 	{
 		super();
-		super.setMinHeight(MIN_HEIGHT);
-		super.setMaxHeight(MAX_HEIGHT);
+		super.setMinHeight(HEIGHT);
+		super.setMaxHeight(HEIGHT);
 
 		_EVENTS[0] = new NavigationEvent(NavigationEvent.LIST);
 		_EVENTS[1] = new NavigationEvent(NavigationEvent.SCRIPT);
@@ -52,7 +51,7 @@ public final class MenuBar extends Region
 		_category = Graphics.CREATE_TEXT_FIELD(_version);
 
 		_buttons = new MenuButton[_MENUS];
-		_separator = new Circle((float) _SEPARATOR_SIZE / 2, Graphics.GRAY_8);
+		_separator = new Circle((float) _SEPARATOR_SIZE / 2, Graphics.GRAY_15);
 		_separator.setMouseTransparent(true);
 		super.getChildren().addAll(_category, _separator);
 		MenuButton b;
@@ -126,7 +125,7 @@ public final class MenuBar extends Region
 	private void _onClick(MouseEvent e)
 	{
 		e.consume();
-		if (e.getButton() != MouseButton.PRIMARY || !KeyboardManager.GET_MANAGER(this).isEmpty()) return;
+		if (e.getButton() != MouseButton.PRIMARY || !Launcher.KEYBOARD.isEmpty()) return;
 		MenuButton b = (MenuButton) e.getSource();
 		if (b.isSelected()) return;
 		byte j = 0;

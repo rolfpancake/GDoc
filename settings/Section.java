@@ -1,6 +1,6 @@
 package settings;
 
-import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import main.Strings;
@@ -9,87 +9,88 @@ import main.Strings;
 /**
  * Une section de propriétés.
  */
-public final class Section implements ISetting
+public class Section implements ISetting
 {
 	static private final String _NAME_RE = "[ \\w]*";
+	static private final String _INVALID_NAME = "invalid name";
 
-	private ArrayList<Property> _properties;
+	private LinkedHashMap<String, Property> _properties;
 	private String _name;
 
 
 	public Section(@Nullable String name)
 	{
-		if (name != null && !name.matches(_NAME_RE)) throw new IllegalArgumentException(INVALID_NAME);
+		if (name != null && !name.matches(_NAME_RE)) throw new IllegalArgumentException(_INVALID_NAME);
 		_name = name;
-		_properties = new ArrayList<Property>();
+		_properties = new LinkedHashMap<String, Property>();
 	}
 
 
-	public void addProperty(@Nullable Property property)
+	public final void addProperty(@Nullable Property... property)
 	{
 		if (property == null) return;
 
-		String s = property.getID();
+		String s;
+		Property p;
 
-		for (Property i : _properties)
+		for (Property i : property)
 		{
-			if (s.equals(i.getID()))
-			{
-				i.copy(property);
-				return;
-			}
-		}
+			if (i == null) continue;
 
-		_properties.add(property);
+			s = i.getName().toLowerCase();
+			p = _properties.get(s);
+
+			if (p == null) _properties.put(s, i);
+			else _properties.replace(s, i);
+		}
 	}
+
+
+	public final void clear() { _properties.clear(); }
 
 
 	@Nullable
 	public String getName() { return _name; }
 
 
-	/**
-	 * Récupére une propriété en la créant si elle n'existe pas.
-	 */
-	@NotNull
-	public Property getProperty(@NotNull String name)
+	@Nullable
+	public final Property getProperty(@NotNull String name)
 	{
-		String s = name.toLowerCase();
-		for (Property i : _properties) if (s.equals(i.getName().toLowerCase())) return i;
-		Property p = new Property(name);
-		_properties.add(p);
-		return p;
+		return _properties.get(name.toLowerCase());
 	}
 
 
-	public byte getSize() { return (byte) _properties.size(); }
+	public final byte getSize() { return (byte) _properties.size(); }
 
 
-	public void removeProperty(@Nullable Property property) { _properties.remove(property); }
+	public final void removeProperty(@Nullable Property property)
+	{
+		if (property != null) _properties.remove(property.getName().toLowerCase());
+	}
 
 
 	@Override
 	@NotNull
-	public String toString()
+	public final String toString()
 	{
-		String s = Strings.LEFT_BRACKET + _name + Strings.RIGHT_BRACKET;
+		String s = _name == null ? Strings.EMPTY : Strings.LEFT_BRACKET + _name + Strings.RIGHT_BRACKET;
 		if (_properties.size() == 0) return s;
 		s += Strings.NEW_LINE;
-		for (Property i : _properties) s += Strings.NEW_LINE + i.toString();
+		for (Property i : _properties.values()) s += Strings.NEW_LINE + i.toString();
 		return s;
 	}
 
 
 	@Override
 	@NotNull
-	public String toIniString()
+	public final String toIniString()
 	{
 		if (_properties.size() == 0) return Strings.EMPTY;
 
 		String s = Strings.EMPTY;
 		String v;
 
-		for (Property i : _properties)
+		for (Property i : _properties.values())
 		{
 			v = i.toIniString();
 			if (v.isEmpty()) continue;
@@ -97,26 +98,20 @@ public final class Section implements ISetting
 			s += v;
 		}
 
-		if (s.isEmpty()) return Strings.EMPTY;
+		if (s.isEmpty() || _name == null) return s;
 		return Strings.LEFT_BRACKET + _name + Strings.RIGHT_BRACKET + Strings.NEW_LINE + Strings.NEW_LINE + s;
 	}
 
 
-	void setName(@Nullable String name)
+	final void setProperty(String name, String value) // parsing
 	{
-		if (name == null)
-		{
-			if (_name != null) throw new IllegalArgumentException(INVALID_NAME);
-		}
-		else if (_name == null)
-		{
-			throw new IllegalArgumentException(INVALID_NAME);
-		}
-		else if (!name.toLowerCase().equals(_name.toLowerCase()))
-		{
-			throw new IllegalArgumentException(INVALID_NAME);
-		}
-
-		_name = name;
+		name = Strings.CLEAN(name);
+		if (name == null) return;
+		name = name.toLowerCase();
+		Property p = _properties.get(name);
+		if (p != null) p.setValue(value);
 	}
+
+
+	protected void validate() { /* void */ }
 }

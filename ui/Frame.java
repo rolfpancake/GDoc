@@ -1,6 +1,5 @@
 package ui;
 
-import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
@@ -12,7 +11,6 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
@@ -27,38 +25,22 @@ public class Frame extends Region
 	static private final Color _SCROLL_BAR_COLOR = Color.gray(0.8);
 	static private final byte _FRAMING_MARGIN = 30;
 
-	private VBox _container; // pour occuper toute la place sans toucher au contenu
 	private Rectangle _hScrollBar;
 	private Rectangle _vScrollBar;
 	private Region _content;
 	private double _x, _y; // coordonnée maximale d'une barre
 	private double _w, _h; // déplacement maximal du contenu
 	private double _d;
-	private boolean _scrolling = false; // éviter un layout pendant le scrolling
+	private boolean _wheel = false; // éviter un layout pendant le scrolling par molette
+	private boolean _scrolling = false; // éviter un layout pendant le scrolling par barre
 	private boolean _resizing = false; // éviter un layout en dehors des redimensionnements
 	private Rectangle _clip;
 	private Insets _margins;
 
-	private ChangeListener<Object> _changeListener = new ChangeListener<Object>()
+	private ChangeListener<Object> _changeHandler = new ChangeListener<Object>()
 	{
 		@Override
-		public void changed(ObservableValue<?> observable, Object oldValue, Object newValue)
-		{
-			/* l'écouteur est placé sur l'occurrence elle-même ainsi que sur le contenu, dans le premier cas il
-		       faut juste permettre le layout, et dans le second le déclencher */
-
-			if (_content != null && !_resizing &&
-				(observable == _content.widthProperty() || observable == _content.heightProperty()))
-			{
-				Platform.runLater(new Runnable()
-				{
-					@Override
-					public void run() { _layoutLater(); }
-				});
-			}
-
-			_resizing = true;
-		}
+		public void changed(ObservableValue<?> observable, Object oldValue, Object newValue) { _resizing = true; }
 	};
 
 	private EventHandler<MouseEvent> _mouseHandler = new EventHandler<MouseEvent>()
@@ -90,7 +72,6 @@ public class Frame extends Region
 			}
 
 			event.consume();
-
 		}
 	};
 
@@ -100,16 +81,17 @@ public class Frame extends Region
 		@Override
 		public void handle(ScrollEvent event)
 		{
+			_wheel = true;
 			double d = (event.isShiftDown() ? 2 : 1) * event.getDeltaY();
 
 			if (_w > 0 && (event.isControlDown() || _h == 0))
 			{
-				_container.setLayoutX(Math.max(-_w, Math.min(_container.getLayoutX() + d, 0)));
+				_content.setLayoutX(Math.max(-_w, Math.min(_content.getLayoutX() + d, _margins.getLeft())));
 				_updateHBar();
 			}
 			else if (_h > 0)
 			{
-				_container.setLayoutY(Math.max(-_h, Math.min(_container.getLayoutY() + d, 0)));
+				_content.setLayoutY(Math.max(-_h, Math.min(_content.getLayoutY() + d, _margins.getTop())));
 				_updateVBar();
 			}
 
@@ -135,16 +117,12 @@ public class Frame extends Region
 		_hScrollBar.setArcHeight(_SCROLL_BAR_CORNER);
 		_hScrollBar.setFill(_SCROLL_BAR_COLOR);
 
-		_container = new VBox();
-		_container.setPadding(_margins);
-		_container.setFillWidth(true);
-
 		_clip = new Rectangle(100, 100, Color.BLACK);
 		super.setClip(_clip);
-		super.getChildren().addAll(_container, _hScrollBar, _vScrollBar);
+		super.getChildren().addAll(_hScrollBar, _vScrollBar);
 
-		super.widthProperty().addListener(_changeListener);
-		super.heightProperty().addListener(_changeListener);
+		super.widthProperty().addListener(_changeHandler);
+		super.heightProperty().addListener(_changeHandler);
 
 		super.addEventHandler(ScrollEvent.SCROLL, _scrollHandler);
 		_vScrollBar.addEventHandler(MouseEvent.MOUSE_PRESSED, _mouseHandler);
@@ -165,38 +143,47 @@ public class Frame extends Region
 
 	public final void frame(Node child)
 	{
-		if (child == null) return;
+		if (child == null || _content == null) return;
 
-		double y0 = child.getLayoutY(); // y de child dans _container
+		double h = super.getHeight();
+
+		if (h == 0 && super.getParent() != null) super.getParent().layout(); // cadrage après construction
+
+		if (_content.getHeight() == 0)
+		{
+			super.layoutChildren();
+			_content.layout();
+		}
+
+		h = super.getHeight();
+
+		double y0 = child.getLayoutY(); // y de child dans _content
 		Parent p = child.getParent();
 
-		while (p != null)
+		while (p != null && p != _content)
 		{
 			y0 += p.getLayoutY();
 			p = p.getParent();
-			if (p == _container) break;
+			if (p == this) break;
 		}
 
-		if (p != _container) return;
+		if (p != _content) return;
 
-		double h = super.getHeight();
-		double ch = child.getBoundsInParent().getHeight();
-		double y1 = y0 + ch; // y basse de child dans _container
-		double y2 = y0 + _container.getLayoutY(); // y de child dans l'occurrence
-		double y3 = y1 + _container.getLayoutY(); // y basse de child dans l'occurrence
+		double ch = child.getBoundsInLocal().getHeight();
+		double y1 = y0 + ch; // y basse de child dans _content
 		double d = (h - ch) / 2;
 
-		_container.setLayoutX(0);
+		_content.setLayoutX(_margins.getLeft());
 		_updateHBar();
 
-		if (y2 < 0)
+		if (y0 + _content.getLayoutY() < 0) // y0 dans this
 		{
-			_container.setLayoutY(Math.max(0, Math.min(_FRAMING_MARGIN, d)) - y0);
+			_content.setLayoutY(Math.max(_margins.getTop(), Math.min(_FRAMING_MARGIN, d)) - y0);
 			_updateVBar();
 		}
-		else if (y3 > h)
+		else if (y1 + _content.getLayoutY() > h) // y1 dans this
 		{
-			_container.setLayoutY(Math.max(0, h - Math.min(_FRAMING_MARGIN, d) - ch) - y0);
+			_content.setLayoutY(Math.max(_margins.getTop(), h - Math.min(_FRAMING_MARGIN, d) - ch) - y0);
 			_updateVBar();
 		}
 	}
@@ -217,13 +204,13 @@ public class Frame extends Region
 	{
 		if (horizontal)
 		{
-			_container.setLayoutX(0);
+			_content.setLayoutX(_margins.getLeft());
 			_hScrollBar.setLayoutX(0);
 		}
 
 		if (vertical)
 		{
-			_container.setLayoutY(0);
+			_content.setLayoutY(_margins.getTop());
 			_hScrollBar.setLayoutY(0);
 		}
 	}
@@ -233,25 +220,24 @@ public class Frame extends Region
 	{
 		if (content == _content)
 		{
-			if (content.getParent() != _container) _container.getChildren().add(content);
+			if (content.getParent() != this) super.getChildren().add(content);
 			return;
 		}
 
 		if (_content != null)
 		{
-			_container.getChildren().remove(_content);
-			_content.widthProperty().removeListener(_changeListener);
-			_content.heightProperty().removeListener(_changeListener);
+			super.getChildren().remove(_content);
+			_content.widthProperty().removeListener(_changeHandler);
+			_content.heightProperty().removeListener(_changeHandler);
 		}
 
 		if (content != null)
 		{
-			_container.setLayoutX(0);
-			_container.setLayoutY(0);
-			_container.getChildren().add(content);
-			content.widthProperty().addListener(_changeListener);
-			content.heightProperty().addListener(_changeListener);
-			_container.layout();
+			content.relocate(_margins.getLeft(), _margins.getTop());
+			super.getChildren().add(0, content);
+			content.widthProperty().addListener(_changeHandler);
+			content.heightProperty().addListener(_changeHandler);
+			//content.layout();
 		}
 
 		_content = content;
@@ -264,12 +250,18 @@ public class Frame extends Region
 	@Override
 	protected void layoutChildren()
 	{
+		if (_wheel)
+		{
+			_wheel = false;
+			return;
+		}
+
 		if (_scrolling || !_resizing) return;
-		_resizing = false;
 
 		if (_content == null)
 		{
-			_h = _w = 0;
+			_resizing = false;
+			_x = _y = _w = _h = 0;
 			_vScrollBar.setVisible(false);
 			_hScrollBar.setVisible(false);
 			super.layoutChildren();
@@ -278,52 +270,113 @@ public class Frame extends Region
 
 		double w = super.getWidth();
 		double h = super.getHeight();
+		double fw = w - _margins.getLeft() - _margins.getRight();
+		double fh = h - _margins.getTop() - _margins.getBottom();
 		_clip.setWidth(w);
 		_clip.setHeight(h);
-		_container.setPrefSize(w, h);
+		_content.setPrefSize(fw, fh); // appelle _changeHandler qui modifie _resizing
 		super.layoutChildren();
 
-		double fw = w;
-		double fh = h;
-		/* si les marges horizontales sont ajoutées ici la barre horizontale est toujours visible */
-		//TODO l'exclusion des marges empêche la visibilité du type le plus long dans TypePane
+		_content.layout(); // fiabilité des limites
 		double cw = _content.getBoundsInLocal().getWidth();
-		double ch = _content.getBoundsInLocal().getHeight() + _margins.getTop() + _margins.getBottom();
-		boolean vs = ch > h;
-		boolean hs = cw > w;
+		double ch = _content.getBoundsInLocal().getHeight();
+		boolean vs = ch > fh;
+		boolean hs = cw > fw;
 
 		if (vs)
 		{
 			fw -= _SCROLL_BAR_THICKNESS;
-			hs = hs || cw > fw;
-			if (hs) fh -= _SCROLL_BAR_THICKNESS;
-			_container.setPrefSize(fw, fh);
-			super.layoutChildren();
-			_container.layout();
+			_content.setPrefWidth(fw);
+
+			if (hs) // confirmé
+			{
+				fh -= _SCROLL_BAR_THICKNESS;
+				_content.setPrefHeight(fh);
+				super.layoutChildren();
+				_content.layout();
+				cw = _content.getBoundsInLocal().getWidth();
+				ch = _content.getBoundsInLocal().getHeight();
+			}
+			else
+			{
+				hs = cw > fw;
+
+				if (hs) // potentiel
+				{
+					fh -= _SCROLL_BAR_THICKNESS;
+					_content.setPrefHeight(fh);
+					super.layoutChildren();
+					_content.layout();
+					cw = _content.getBoundsInLocal().getWidth();
+					ch = _content.getBoundsInLocal().getHeight();
+
+					if (cw <= fw) // annulé car le contenu peut être réduit en largeur
+					{
+						fh += _SCROLL_BAR_THICKNESS;
+						_content.setPrefHeight(fh);
+						super.layoutChildren();
+						_content.layout();
+						cw = _content.getBoundsInLocal().getWidth();
+						ch = _content.getBoundsInLocal().getHeight();
+						hs = false;
+					}
+				}
+				else // infirmé
+				{
+					super.layoutChildren();
+					_content.layout();
+					cw = _content.getBoundsInLocal().getWidth();
+				}
+			}
 		}
 		else if (hs)
 		{
 			fh -= _SCROLL_BAR_THICKNESS;
+			_content.setPrefHeight(fh);
 			vs = ch > fh;
-			if (vs) fw -= _SCROLL_BAR_THICKNESS;
-			_container.setPrefSize(fw, fh);
-			super.layoutChildren();
-			_container.layout();
+
+			if (vs) // potentiel
+			{
+				fw -= _SCROLL_BAR_THICKNESS;
+				_content.setPrefWidth(fw);
+				super.layoutChildren();
+				_content.layout();
+				cw = _content.getBoundsInLocal().getWidth();
+				ch = _content.getBoundsInLocal().getHeight();
+
+				if (cw <= fw) // annulé car le contenu peut être réduit en hauteur
+				{
+					fw += _SCROLL_BAR_THICKNESS;
+					_content.setPrefWidth(fw);
+					super.layoutChildren();
+					_content.layout();
+					cw = _content.getBoundsInLocal().getWidth();
+					ch = _content.getBoundsInLocal().getHeight();
+					vs = false;
+				}
+			}
+			else // infirmé
+			{
+				super.layoutChildren();
+				_content.layout();
+				ch = _content.getBoundsInLocal().getHeight();
+			}
 		}
+
+		_resizing = false;
 
 		if (vs)
 		{
-			_vScrollBar.setHeight(fh / ch * fh);
-			_y = h - (h - fh) - _vScrollBar.getHeight();
-			_h = -(h - (h - fh) - ch);
-			_container.setLayoutY(Math.max(-_h, Math.min(_container.getLayoutY(), 0)));
-			_vScrollBar.setLayoutX(fw);
-			_vScrollBar.setLayoutY(-_container.getLayoutY() / _h * _y);
+			_vScrollBar.setHeight(fh / ch * h);
+			_y = h - (hs ? _SCROLL_BAR_THICKNESS : 0) - _vScrollBar.getHeight();
+			_h = -(_margins.getTop() + fh - ch);
+			_content.setLayoutY(Math.max(-_h, Math.min(_content.getLayoutY(), _margins.getTop())));
+			_vScrollBar.relocate(w - _SCROLL_BAR_THICKNESS, -_content.getLayoutY() / _h * _y);
 			_vScrollBar.setVisible(true);
 		}
 		else
 		{
-			_h = 0;
+			_h = _margins.getTop();
 			_y = 0;
 			_vScrollBar.setVisible(false);
 			_updateVContent();
@@ -331,49 +384,43 @@ public class Frame extends Region
 
 		if (hs)
 		{
-			cw += _margins.getLeft() + _margins.getRight();
-			_hScrollBar.setWidth(fw / cw * fw);
-			_x = w - (w - fw) - _hScrollBar.getWidth();
-			_w = -(w - (w - fw) - cw);
-			_container.setLayoutX(Math.max(-_w, Math.min(_container.getLayoutX(), 0)));
-			_hScrollBar.setLayoutY(fh);
-			_hScrollBar.setLayoutX(-_container.getLayoutX() / _w * _x);
+			_hScrollBar.setWidth(fw / cw * w);
+			_x = w - (vs ? _SCROLL_BAR_THICKNESS : 0) - _hScrollBar.getWidth();
+			_w = -(_margins.getLeft() + fw - cw);
+			_content.setLayoutX(Math.max(-_w, Math.min(_content.getLayoutX(), _margins.getLeft())));
+			_hScrollBar.relocate(-_content.getLayoutX() / _w * _x, h - _SCROLL_BAR_THICKNESS);
 			_hScrollBar.setVisible(true);
 		}
 		else
 		{
-			_w = 0;
+			_w = _margins.getLeft();
 			_x = 0;
 			_hScrollBar.setVisible(false);
 			_updateHContent();
 		}
 	}
 
-	private void _layoutLater()
-	{
-		if (_resizing) super.requestLayout();
-	}
 
 	private void _updateHBar()
 	{
-		_hScrollBar.setLayoutX(_w > 0 ? -_container.getLayoutX() / _w * _x : 0);
+		_hScrollBar.setLayoutX(_w > 0 ? -_content.getLayoutX() / _w * _x : 0);
 	}
 
 
 	private void _updateHContent()
 	{
-		_container.setLayoutX(_x > 0 ? -_hScrollBar.getLayoutX() / _x * _w : 0);
+		_content.setLayoutX(_x > 0 ? _margins.getLeft() - _hScrollBar.getLayoutX() / _x * _w : _margins.getLeft());
 	}
 
 
 	private void _updateVBar()
 	{
-		_vScrollBar.setLayoutY(_h > 0 ? -_container.getLayoutY() / _h * _y : 0);
+		_vScrollBar.setLayoutY(_h > 0 ? -_content.getLayoutY() / _h * _y : 0);
 	}
 
 
 	private void _updateVContent()
 	{
-		_container.setLayoutY(_y > 0 ? -_vScrollBar.getLayoutY() / _y * _h : 0);
+		_content.setLayoutY(_y > 0 ? _margins.getTop() - _vScrollBar.getLayoutY() / _y * _h : _margins.getTop());
 	}
 }

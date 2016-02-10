@@ -10,7 +10,6 @@ import events.TabEvent;
 import main.Strings;
 import ui.Graphics;
 import ui.Tab;
-import static main.Debug.trace;
 
 
 public final class TabBar extends Region
@@ -80,10 +79,7 @@ public final class TabBar extends Region
 	@NotNull
 	public TypeTab getTab(byte index)
 	{
-		index = (byte) Math.max(0, Math.min(index, _tabs.size() - 1));
-		TypeTab t = _tabs.get(index);
-		trace("getTab", t.getType());
-		return t;
+		return _tabs.get((byte) Math.max(0, Math.min(index, _tabs.size() - 1)));
 	}
 
 

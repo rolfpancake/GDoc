@@ -22,6 +22,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import events.KeyboardManager;
 import fonts.FontManager;
 import ui.ConstraintFactory;
 import ui.Frame;
@@ -47,6 +48,7 @@ public class ErrorWindow extends Stage
 		super.initModality(modality);
 		super.setResizable(false);
 		super.setTitle(title);
+		KeyboardManager.GET_MANAGER(this);
 
 		// TODO texte sélectionnable
 		GridPane g = new GridPane();

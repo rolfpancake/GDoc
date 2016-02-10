@@ -19,6 +19,7 @@ import events.KeyboardManager;
 import events.TabEvent;
 import fonts.FontManager;
 import fonts.FontWeight;
+import main.Launcher;
 import main.Strings;
 import ui.Graphics;
 import ui.Tab;
@@ -37,6 +38,8 @@ public final class TypeTab extends Tab
 	static private final byte _ARC_HEIGHT = 6;
 	static private final byte _OFFSET = 2;
 	static private final FontWeight _WEIGHT = FontWeight.SemiBold;
+	static private final byte _CROSS_COLUMN = 0;
+	static private final byte _CROSS_ROW = 0;
 
 	private Text _title;
 	private ImageView _closeButton;
@@ -69,7 +72,7 @@ public final class TypeTab extends Tab
 		_title = Graphics.CREATE_TEXT_FIELD(type.getName(), FontManager.INSTANCE.getFont(_WEIGHT, _OFFSET));
 		_left = new Group();
 		_right = new Group();
-		_closeButton = Graphics.GET_ICON_16((byte) 0, (byte) 0);
+		_closeButton = Graphics.GET_ICON_16(_CROSS_COLUMN, _CROSS_ROW);
 		_closeButton.setPickOnBounds(true);
 
 		_centerBorder = new Rectangle(2, BORDER_THICKNESS, BORDER_COLOR);
@@ -215,7 +218,7 @@ public final class TypeTab extends Tab
 	{
 		e.consume(); // l'événement est bien consommé
 		if (e.getButton() != MouseButton.PRIMARY) return;
-		KeyboardManager k = KeyboardManager.GET_MANAGER(this);
+		KeyboardManager k = Launcher.KEYBOARD;
 
 		if (e.getTarget() instanceof ImageView)
 		{

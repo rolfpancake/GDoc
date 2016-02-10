@@ -12,7 +12,7 @@ abstract public class Strings
 {
 	static public final String ASTERISK = "*";
 	static public final String AT = "@";
-	static public final String CAPITAL_A = "A";
+	static public final char CAPITAL_A = 'A';
 	static public final String COMMA = ",";
 	static public final char COLON = ':';
 	static public final String DASH = "-";
@@ -36,13 +36,6 @@ abstract public class Strings
 	static public final String UNDERLINE = "_";
 
 	static public final String ELLIPSIS = "..";
-	static public final String HEIGHT = "height";
-	static public final String HIDE = "hide";
-	static public final String LOG = "log";
-	static public final String MAXIMIZED = "maximized";
-	static public final String UI = "ui";
-	static public final String WIDTH = "width";
-	static public final String WINDOW = "window";
 
 	static private final String[] _ESCAPING = {"<", "\\$lt;", ">", "\\$gt;", "\"", "\\$quot;", "'", "\\$apo;",
 											   "&", "\\$amp;"};

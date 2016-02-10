@@ -5,6 +5,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import events.SelectionEvent;
 
+// TODO arcs Bézier
 
 abstract public class Tab extends Region
 {

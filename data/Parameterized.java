@@ -47,7 +47,7 @@ abstract public class Parameterized extends Identifier
 		_arguments = new ArrayList<Argument>(n);
 		byte k; // valeur dans l4
 		byte i1 = 0; // indice dans l2
-		byte i2; // indice dans _arguments
+		byte i2; // indice dans suffix
 
 		for (Argument i : l2)
 		{
@@ -67,7 +67,7 @@ abstract public class Parameterized extends Identifier
 
 
 	/**
-	 * Récupére une liste ordonnée des arguments.
+	 * Récupére une liste ordonnée des suffix.
 	 *
 	 * @return Un tableau non null
 	 */
@@ -79,7 +79,7 @@ abstract public class Parameterized extends Identifier
 
 
 	/**
-	 * Récupére le nombre d'arguments.
+	 * Récupére le nombre d'suffix.
 	 *
 	 * @return Un entier >= 0
 	 */

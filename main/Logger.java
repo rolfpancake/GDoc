@@ -4,8 +4,6 @@ import org.jetbrains.annotations.Nullable;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.scene.control.CheckBox;
-import settings.Property;
-import settings.Settings;
 import window.ErrorWindow;
 
 
@@ -23,18 +21,15 @@ public final class Logger extends ErrorWindow
 		super.setResizable(true);
 		_hide = new CheckBox("Not show again");
 		super.setLeftAnchor(_hide);
-		Property p = Settings.INSTANCE.getSection(Strings.LOG).getProperty(Strings.HIDE);
-		p.setPersistent(true);
-		p.setDefault(true);
-		_hide.setSelected(p.isTrue());
+		_hide.setSelected(Launcher.SETTINGS.log().hide().toBoolean());
 
 		_hide.selectedProperty().addListener(new ChangeListener<Boolean>()
 		{
 			@Override
 			public void changed(ObservableValue<? extends Boolean> observable, Boolean oldValue, Boolean newValue)
 			{
-				Settings.INSTANCE.getSection(Strings.LOG).getProperty(Strings.HIDE).setValue(newValue);
-				Settings.INSTANCE.save();
+				Launcher.SETTINGS.log().hide().setValue(newValue);
+				Launcher.SETTINGS.save();
 			}
 		});
 	}
@@ -55,8 +50,7 @@ public final class Logger extends ErrorWindow
 
 		if (!super.isShowing())
 		{
-			if ((_hide.isSelected() && _lines > 1) ||
-				Settings.INSTANCE.getSection(Strings.LOG).getProperty(Strings.HIDE).isTrue())
+			if ((_hide.isSelected() && _lines > 1) || Launcher.SETTINGS.log().hide().toBoolean())
 				return;
 
 			super.show();

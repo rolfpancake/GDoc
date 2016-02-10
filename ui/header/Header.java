@@ -4,13 +4,14 @@ import org.jetbrains.annotations.NotNull;
 import javafx.scene.layout.Region;
 import javafx.scene.shape.Rectangle;
 import ui.Graphics;
-import ui.classes.Historic;
+import ui.content.Historic;
 
 
 public final class Header extends Region
 {
-	static private final byte _BARS = TabBar.MIN_HEIGHT + MenuBar.MIN_HEIGHT + HistBar.MIN_HEIGHT;
+	static private final byte _BARS = TabBar.MIN_HEIGHT + MenuBar.HEIGHT + HistBar.MIN_HEIGHT;
 	static private final byte _SPACES = 2 * Graphics.PADDING - TypeTab.OVERLAP;
+	static private final byte _TABS_HEIGHT = 30;
 
 	private TabBar _tabBar;
 	private HistBar _histBar;
@@ -18,7 +19,7 @@ public final class Header extends Region
 	private Rectangle _background;
 
 
-	public Header(@NotNull Historic historic )
+	public Header(@NotNull Historic historic)
 	{
 		super();
 		super.setMinHeight(_BARS + _SPACES);
@@ -47,22 +48,18 @@ public final class Header extends Region
 	protected void layoutChildren()
 	{
 		double w = super.getWidth();
-		double h = super.getHeight() - _SPACES;
-		short h1 = (short) Math.max(TabBar.MIN_HEIGHT, (double) TabBar.MIN_HEIGHT / _BARS * h);
-		short h2 = (short) Math.max(MenuBar.MIN_HEIGHT, (double) MenuBar.MIN_HEIGHT / _BARS * h);
 
-		_tabBar.setPrefSize(w, h1);
+		_tabBar.setPrefSize(w, _TABS_HEIGHT);
 
-		_menuBar.setLayoutY(h1 + Graphics.PADDING - TypeTab.OVERLAP);
-		_menuBar.setPrefSize(w, h2);
+		_menuBar.setLayoutY(_TABS_HEIGHT + Graphics.PADDING - TypeTab.OVERLAP);
+		_menuBar.setPrefWidth(w);
 
-		_histBar.setLayoutY(h1 + h2 + _SPACES);
+		_histBar.setLayoutY(_menuBar.getBoundsInParent().getMaxY() + Graphics.PADDING);
 		_histBar.setPrefSize(w, super.getHeight() - _histBar.getLayoutY());
 
-		_background.setLayoutY(h1 - TypeTab.OVERLAP);
+		_background.setLayoutY(_TABS_HEIGHT - TypeTab.OVERLAP);
 		_background.setWidth(w);
 		_background.setHeight(super.getHeight() - _background.getLayoutY());
-
 		super.layoutChildren();
 	}
 }

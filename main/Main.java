@@ -6,7 +6,7 @@ import javafx.stage.Stage;
 
 public final class Main extends Application
 {
-	static public final float VERSION = 0.43f;
+	static public final float VERSION = 0.44f;
 
 
 	public static void main(String[] args)

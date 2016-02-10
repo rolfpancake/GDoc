@@ -3,6 +3,8 @@ package events;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.EventHandler;
@@ -12,7 +14,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.stage.Window;
 import javafx.stage.WindowEvent;
-import com.sun.istack.internal.Nullable;
 import main.Strings;
 
 
@@ -51,45 +52,31 @@ public final class KeyboardManager
 		}
 	};
 
-
-	private KeyboardManager(Window w)
+	private EventHandler<WindowEvent> _onHidden = new EventHandler<WindowEvent>()
 	{
-		w.addEventHandler(KeyEvent.KEY_PRESSED, _onPress);
-		w.addEventHandler(KeyEvent.KEY_RELEASED, _onRelease);
-		w.focusedProperty().addListener(_onFocusChanged);
-
-		w.addEventHandler(WindowEvent.WINDOW_HIDDEN, new EventHandler<WindowEvent>()
+		@Override
+		public void handle(WindowEvent event)
 		{
-			@Override
-			public void handle(WindowEvent event)
-			{
-				if (event.getSource() instanceof Window)
-				{
-					Window w = (Window) event.getSource();
-					w.removeEventHandler(KeyEvent.KEY_PRESSED, _onPress);
-					w.removeEventHandler(KeyEvent.KEY_RELEASED, _onRelease);
-					w.removeEventHandler(WindowEvent.WINDOW_HIDDEN, this);
-					w.focusedProperty().removeListener(_onFocusChanged);
-					_managers.remove(event.getSource());
-				}
-			}
-		});
-	}
+			Window w = (Window) event.getSource();
+			w.removeEventHandler(KeyEvent.KEY_PRESSED, _onPress);
+			w.removeEventHandler(KeyEvent.KEY_RELEASED, _onRelease);
+			w.removeEventHandler(WindowEvent.WINDOW_HIDDEN, this);
+			w.focusedProperty().removeListener(_onFocusChanged);
+			_managers.remove(w);
+		}
+	};
+
+
+	public KeyboardManager() { super(); }
+
+
+	public KeyboardManager(@NotNull Window window) { _init(window); }
 
 
 	@Nullable
-	static public KeyboardManager GET_MANAGER(Window window)
+	static public KeyboardManager GET_MANAGER(@Nullable Window window)
 	{
-		if (window == null) return null;
-		KeyboardManager m = _managers.get(window);
-
-		if (m == null)
-		{
-			m = new KeyboardManager(window);
-			_managers.put(window, m);
-		}
-
-		return m;
+		return _managers.get(window);
 	}
 
 
@@ -100,16 +87,7 @@ public final class KeyboardManager
 		Scene s = node.getScene();
 		if (s == null) return null;
 		Window w = s.getWindow();
-		if (w == null) return null;
-		KeyboardManager m = _managers.get(w);
-
-		if (m == null)
-		{
-			m = new KeyboardManager(w);
-			_managers.put(w, m);
-		}
-
-		return m;
+		return _managers.get(w);
 	}
 
 
@@ -154,7 +132,15 @@ public final class KeyboardManager
 
 	public boolean isKey(KeyCode key)
 	{
-		return key != null ? _keys.size() == 1 && key == _keys.get(0) : _keys.size() == 0;
+		return key != null ? _keys.size() == 1 && key == _keys.get(0) : _keys.isEmpty();
+	}
+
+
+	public void setWindow(@NotNull Window window)
+	{
+		if (_managers.containsKey(window)) return;
+		_managers.put(window, this);
+		_init(window);
 	}
 
 
@@ -165,5 +151,14 @@ public final class KeyboardManager
 		String c = Strings.COMMA + Strings.SPACE;
 		for (KeyCode i : _keys) s += (s.isEmpty() ? Strings.EMPTY : c) + i.getName();
 		return s;
+	}
+
+
+	private void _init(Window w)
+	{
+		w.addEventHandler(KeyEvent.KEY_PRESSED, _onPress);
+		w.addEventHandler(KeyEvent.KEY_RELEASED, _onRelease);
+		w.focusedProperty().addListener(_onFocusChanged);
+		w.addEventHandler(WindowEvent.WINDOW_HIDDEN, _onHidden);
 	}
 }

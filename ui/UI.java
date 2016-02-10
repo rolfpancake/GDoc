@@ -14,7 +14,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import events.SelectionEvent;
 import main.Launcher;
-import ui.classes.ClassPane;
+import ui.content.DocPane;
 import ui.types.TypePane;
 
 
@@ -26,7 +26,7 @@ public final class UI extends Region implements EventHandler<Event>, ChangeListe
 
 	private TypePane _typePane;
 	private Region _separator;
-	private ClassPane _classPane;
+	private DocPane _docPane;
 	private boolean _resizing = true;
 	private boolean _autoWidth = true;
 
@@ -38,7 +38,7 @@ public final class UI extends Region implements EventHandler<Event>, ChangeListe
 		super.setPickOnBounds(false);
 
 		_typePane = new TypePane();
-		_classPane = new ClassPane(_typePane);
+		_docPane = new DocPane(_typePane);
 
 		_separator = new Region();
 		BackgroundFill b1 = new BackgroundFill(Color.TRANSPARENT, null, null);
@@ -46,7 +46,7 @@ public final class UI extends Region implements EventHandler<Event>, ChangeListe
 		_separator.setBackground(new Background(b1, b2));
 		_separator.setMinWidth(9);
 		_separator.setMaxWidth(9);
-		super.getChildren().addAll(_classPane, _separator, _typePane);
+		super.getChildren().addAll(_docPane, _separator, _typePane);
 
 		_typePane.addEventHandler(SelectionEvent.SELECTED, this);
 		_separator.addEventHandler(MouseEvent.MOUSE_ENTERED, this);
@@ -99,7 +99,7 @@ public final class UI extends Region implements EventHandler<Event>, ChangeListe
 		else if (event instanceof SelectionEvent)
 		{
 			if (event.getTarget() instanceof UIType)
-				_classPane.setType(((UIType) event.getTarget()).getType());
+				_docPane.setType(((UIType) event.getTarget()).getType());
 
 			Launcher.INSTANCE.updateMemoryUsage();
 		}
@@ -121,11 +121,11 @@ public final class UI extends Region implements EventHandler<Event>, ChangeListe
 		if (_autoWidth) _typePane.fitWidth();
 		_typePane.setPrefHeight(super.getHeight());
 		_separator.setPrefHeight(super.getHeight());
-		_classPane.setPrefHeight(super.getHeight());
+		_docPane.setPrefHeight(super.getHeight());
 		super.layoutChildren();
 		_separator.setLayoutX(_typePane.getWidth() - _SEPARATOR_MARGIN);
-		_classPane.setLayoutX(_separator.getLayoutX() + _SEPARATOR_MARGIN + 1);
-		_classPane.setPrefWidth(super.getWidth() - _classPane.getLayoutX());
+		_docPane.setLayoutX(_separator.getLayoutX() + _SEPARATOR_MARGIN + 1);
+		_docPane.setPrefWidth(super.getWidth() - _docPane.getLayoutX());
 		super.layoutChildren();
 	}
 }

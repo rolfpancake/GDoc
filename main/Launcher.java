@@ -1,5 +1,10 @@
 package main;
 
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import org.jetbrains.annotations.NotNull;
 import javafx.application.Platform;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
@@ -11,20 +16,19 @@ import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
 import events.KeyboardManager;
 import exceptions.ErrorMessage;
-import settings.Property;
-import settings.Section;
-import settings.Settings;
+import settings.ApplicationSettings;
+import settings.WindowSection;
 import ui.Graphics;
 import ui.UI;
 import window.ErrorWindow;
 
 
+//TODO fenêtre de messages
+
 public final class Launcher
 {
 	static private final short _MIN_WIDTH = 450;
 	static private final short _MIN_HEIGHT = 300;
-	static private final short _DEFAULT_WIDTH = 900;
-	static private final short _DEFAULT_HEIGHT = 550;
 
 	static private final String _TITLE_1 = "GDoc " + Main.VERSION + " | ";
 	static private final String _TITLE_2 = " KB | ";
@@ -33,6 +37,13 @@ public final class Launcher
 	static private final String _TITLE_ERROR = "Error";
 	static private final short _GC_THRESHOLD = (short) 35000; // KB
 
+	@NotNull
+	static public final ApplicationSettings SETTINGS = new ApplicationSettings();
+
+	@NotNull
+	static public final KeyboardManager KEYBOARD = new KeyboardManager();
+
+	@NotNull
 	static public final Launcher INSTANCE = new Launcher();
 
 	private Stage _window;
@@ -45,10 +56,7 @@ public final class Launcher
 		Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler()
 		{
 			@Override
-			public void uncaughtException(Thread t, Throwable e)
-			{
-				raise(e);
-			}
+			public void uncaughtException(Thread t, Throwable e) { raise(e); }
 		});
 
 		_runtime = Runtime.getRuntime();
@@ -58,13 +66,7 @@ public final class Launcher
 	public void log(String message)
 	{
 		if (message == null || message.isEmpty()) return;
-
-		if (_logger == null)
-		{
-			_logger = new Logger();
-			KeyboardManager.GET_MANAGER(_logger);
-		}
-
+		if (_logger == null) _logger = new Logger();
 		_logger.append(message);
 	}
 
@@ -88,6 +90,7 @@ public final class Launcher
 	{
 		if (Platform.isFxApplicationThread())
 		{
+			exception.printStackTrace();
 			raise(new ErrorMessage(exception, true));
 		}
 		else
@@ -108,7 +111,6 @@ public final class Launcher
 
 		ErrorWindow w = new ErrorWindow(_window, Modality.APPLICATION_MODAL, (short) 350, (short) 200,
 										_TITLE_ERROR, message.getMessage());
-		KeyboardManager.GET_MANAGER(w);
 
 		w.addEventHandler(WindowEvent.WINDOW_HIDDEN, new EventHandler<WindowEvent>()
 		{
@@ -134,14 +136,15 @@ public final class Launcher
 	{
 		if (_window != null) return;
 		_window = stage;
-		_initSettings();
 		_initHandlers();
-		KeyboardManager.GET_MANAGER(_window); // initialisation
+		KEYBOARD.setWindow(stage);
 
-		Section e = Settings.INSTANCE.getSection(Strings.WINDOW);
-		short w = Short.valueOf(e.getProperty(Strings.WIDTH).getValue());
-		short h = Short.valueOf(e.getProperty(Strings.HEIGHT).getValue());
-		boolean m = e.getProperty(Strings.MAXIMIZED).isTrue();
+		WindowSection e = SETTINGS.window();
+		e.width().setValue((short) Math.max(_MIN_WIDTH, e.width().toShort()));
+		e.height().setValue((short) Math.max(_MIN_HEIGHT, e.height().toShort()));
+
+		short w = e.width().toShort();
+		short h = e.height().toShort();
 
 		String s = Paths.IMAGES + "logo/";
 		_window.getIcons().addAll(new Image(s + "16.png"), new Image(s + "32.png"), new Image(s + "48.png"));
@@ -150,7 +153,7 @@ public final class Launcher
 		_window.setScene(new Scene(new UI(), w, h, Graphics.BACKGROUND_COLOR));
 		updateMemoryUsage();
 
-		if (m)
+		if (e.maximized().toBoolean())
 		{
 			stage.setMaximized(true);
 			_window.show();
@@ -190,27 +193,11 @@ public final class Launcher
 	}
 
 
-	private void _initSettings()
-	{
-		Section s = Settings.INSTANCE.getSection(Strings.WINDOW);
-		Property p = s.getProperty(Strings.WIDTH);
-		p.setDefault(_DEFAULT_WIDTH, true);
-		p.setValue((short) Math.max(_MIN_WIDTH, Short.valueOf(p.getValue())));
-
-		p = s.getProperty(Strings.HEIGHT);
-		p.setDefault(_DEFAULT_HEIGHT, true);
-		p.setValue(Math.max(_MIN_HEIGHT, Short.valueOf(p.getValue())));
-
-		p = s.getProperty(Strings.MAXIMIZED);
-		p.setDefault(false);
-	}
-
-
 	private void _onMaximize(boolean v)
 	{
-		Property p = Settings.INSTANCE.getSection(Strings.WINDOW).getProperty(Strings.MAXIMIZED);
-		p.setValue(v);
-		Settings.INSTANCE.save();
+		// les dimensions de la fenêtre sont déjà modifiées
+		SETTINGS.window().maximized().setValue(v);
+		SETTINGS.save();
 	}
 
 
@@ -218,11 +205,40 @@ public final class Launcher
 	{
 		if (!_window.isMaximized())
 		{
-			Section e = Settings.INSTANCE.getSection(Strings.WINDOW);
-			e.getProperty(Strings.WIDTH).setValue((int) Math.round(_window.getWidth()));
-			e.getProperty(Strings.HEIGHT).setValue((int) Math.round(_window.getHeight()));
+			WindowSection e = SETTINGS.window();
+			e.width().setValue((short) Math.round(_window.getWidth()));
+			e.height().setValue((short) Math.round(_window.getHeight()));
 		}
 
-		Settings.INSTANCE.save();
+		SETTINGS.save();
 	}
+
+	/*private void _write(String message)
+	{
+		Path p = Paths.USER_DIR.resolve("error.txt");
+		if (Files.isDirectory(p)) return;
+		FileWriter w = null;
+
+		try
+		{
+			w = new FileWriter(p.toFile());
+			w.write(message);
+		}
+		catch (IOException e)
+		{
+			Launcher.INSTANCE.log(e);
+		}
+
+		if (w != null)
+		{
+			try
+			{
+				w.close();
+			}
+			catch (IOException e)
+			{
+				Launcher.INSTANCE.log(e);
+			}
+		}
+	}*/
 }

@@ -7,6 +7,7 @@ import javafx.geometry.VPos;
 import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.shape.Shape;
 import javafx.scene.text.Text;
 import data.Documentation;
 import data.Trunk;
@@ -16,7 +17,6 @@ import fonts.FontManager;
 import fonts.FontWeight;
 import main.Strings;
 
-//TODO alignement du namespace
 //TODO créer une super classe UIReference
 
 /**
@@ -30,7 +30,7 @@ public final class UIType extends Group
 	private Type _type;
 	private Text _label;
 	private Text _member;
-	private Text _namespace;
+	private Shape _namespace;
 	private Text _parenthesis;
 
 
@@ -66,9 +66,7 @@ public final class UIType extends Group
 		{
 			if (!hideType)
 			{
-				_namespace = Graphics.CREATE_TEXT_FIELD(Strings.NAMESPACE);
-				_namespace.setFont(FontManager.INSTANCE.getFont(FontWeight.ExtraBold, (byte) (_OFFSET + 1)));
-				_namespace.setFill(Graphics.BLUE);
+				_namespace = Graphics.DRAW_NAMESPACE();
 				super.getChildren().add(_namespace);
 			}
 
@@ -129,13 +127,16 @@ public final class UIType extends Group
 		{
 			_namespace.setLayoutX(x);
 			x += _namespace.getBoundsInLocal().getWidth() + _H_PADDING;
+			if (_label != null)
+				_namespace.setLayoutY(_label.getBaselineOffset() - _namespace.getBoundsInLocal().getHeight());
 		}
 
 		if (_member != null)
 		{
 			_member.setLayoutX(x);
 			x += _member.getBoundsInLocal().getWidth() + _H_PADDING;
-			if (_parenthesis != null) _parenthesis.setLayoutX(x);
+			if (_parenthesis != null)
+				_parenthesis.relocate(x, _member.getLayoutY() + _member.getBaselineOffset() - _parenthesis.getBaselineOffset());
 		}
 	}
 

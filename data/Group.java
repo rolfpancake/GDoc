@@ -56,7 +56,7 @@ public final class Group
 
 		_list = new ArrayList<Identifier>(n);
 		HashMap<String, Identifier> u1 = new HashMap<String, Identifier>(n); // identifiants non décrits
-		HashMap<String, HashMap<String, Argument>> u2 = null; // arguments non décrits
+		HashMap<String, HashMap<String, Argument>> u2 = null; // suffix non décrits
 		HashMap<String, Return> u3 = null; // retours non décrits
 
 		Identifier id = null;
@@ -156,7 +156,7 @@ public final class Group
 					o = j.getFirstChild(XMLTag.DESCRIPTION); // description
 					if (o != null) id.description = Strings.CLEAN(o.getValue());
 
-					if (a2 != null) // description des arguments
+					if (a2 != null) // description des suffix
 					{
 						for (XML k : j.getChildren(XMLTag.ARGUMENT))
 						{

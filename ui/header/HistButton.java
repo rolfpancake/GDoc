@@ -11,7 +11,7 @@ import main.Strings;
 import ui.Graphics;
 
 
-final class HistButton extends Region
+public final class HistButton extends Region
 {
 	static private final byte _OFFSET = -2;
 	static private final byte _MARGINS = Graphics.PADDING;

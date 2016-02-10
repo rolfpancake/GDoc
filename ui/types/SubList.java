@@ -22,9 +22,11 @@ import fonts.FontManager;
 import main.Launcher;
 import main.Strings;
 import ui.ConstraintFactory;
-import ui.FilterBar;
 import ui.Graphics;
 import ui.UIType;
+import ui.filters.FilterBar;
+import ui.filters.FilterButton;
+import ui.filters.FilterGroup;
 
 
 public final class SubList extends GridPane implements EventHandler<ChangeEvent>
@@ -55,10 +57,10 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 	private VBox _list;
 	private ListType _type;
 	private Text _counter;
+	private FilterGroup _filterGroup;
 	private FilterBar _filterBar;
 
 	// TODO marquer les classes de base dans les sous-listes filtrées
-	// TODO indiquer le nombre de sous-types totaux de chaque type ?
 
 
 	SubList(ListType type, ArrayList<Type> types)
@@ -84,8 +86,8 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 	@Override
 	public void handle(ChangeEvent event)
 	{
-		if (_filterBar.isReversed()) _select(true);
-		else if (_filterBar.getCurrent() == null) _selectAll();
+		if (_filterGroup.isReversed()) _select(true);
+		else if (_filterGroup.getCurrent() == null) _selectAll();
 		else _select(false);
 	}
 
@@ -104,9 +106,9 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 
 	void reset()
 	{
-		if (_filterBar != null && (_filterBar.isReversed() || _filterBar.getCurrent() != null))
+		if (_filterGroup != null && (_filterGroup.isReversed() || _filterGroup.getCurrent() != null))
 		{
-			_filterBar.reset();
+			_filterGroup.reset();
 			_selectAll();
 		}
 	}
@@ -147,13 +149,15 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 		String s = null;
 		short j = 0;
 
+		if (_type != ListType.ALL) _filterGroup = new FilterGroup(true, true);
+
 		if (_type == ListType.ALL)
 		{
 			s = "All";
 		}
 		else if (_type == ListType.ROOT)
 		{
-			_filterBar = new FilterBar(true, true, _REFERENCE, _NODE);
+			_filterGroup.addButton(new FilterButton(_REFERENCE), new FilterButton(_NODE));
 			s = "Root";
 			s0 = d.getType("Reference");
 			s1 = d.getType("Node");
@@ -169,7 +173,7 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 		else if (_type == ListType.BUILT_IN)
 		{
 			s = "Built-In";
-			_filterBar = new FilterBar(true, true, _BASIC, _VECTOR, _ARRAY);
+			_filterGroup.addButton(new FilterButton(_BASIC), new FilterButton(_VECTOR), new FilterButton(_ARRAY));
 
 			for (UIType i : _types)
 			{
@@ -182,7 +186,7 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 		}
 		else if (_type == ListType.RESOURCE)
 		{
-			_filterBar = new FilterBar(true, true, _AUDIO, _SHAPE, _SHADER);
+			_filterGroup.addButton(new FilterButton(_AUDIO), new FilterButton(_SHAPE), new FilterButton(_SHADER));
 			s = Type.RESOURCE_TYPE_NAME;
 			s0 = d.getType("AudioStream");
 			s1 = d.getType("Shape");
@@ -200,7 +204,8 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 		}
 		else if (_type == ListType.CONTROL)
 		{
-			_filterBar = new FilterBar(true, true, _BUTTON, _BOX, _RANGE, _POPUP);
+			_filterGroup.addButton(new FilterButton(_BUTTON), new FilterButton(_BOX), new FilterButton(_RANGE),
+								   new FilterButton(_POPUP));
 			s = Type.CONTROL_TYPE_NAME;
 			s0 = d.getType("BaseButton");
 			s1 = d.getType("Container");
@@ -219,7 +224,7 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 		}
 		else if (_type == ListType.NODE2D)
 		{
-			_filterBar = new FilterBar(true, true, _PHYSIC, _JOINT);
+			_filterGroup.addButton(new FilterButton(_PHYSIC), new FilterButton(_JOINT));
 			s = "2D";
 			s0 = d.getType("CollisionObject2D");
 			s1 = d.getType("CollisionPolygon2D");
@@ -236,7 +241,7 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 		}
 		else if (_type == ListType.SPATIAL)
 		{
-			_filterBar = new FilterBar(true, true, _PHYSIC, _JOINT, _INSTANCE);
+			_filterGroup.addButton(new FilterButton(_PHYSIC), new FilterButton(_JOINT), new FilterButton(_INSTANCE));
 			s = "3D";
 			s0 = d.getType("CollisionObject");
 			s1 = d.getType("CollisionPolygon");
@@ -270,12 +275,13 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 		_list = new VBox(_LINE_PADDING);
 		_list.setFillWidth(false);
 
-		if (_filterBar != null)
+		if (_filterGroup != null)
 		{
+			_filterBar = new FilterBar(null, _filterGroup, null);
 			super.getRowConstraints().add(r0);
 			super.add(_filterBar, 0, 1);
 			super.add(_list, 0, 2);
-			_filterBar.addEventHandler(ChangeEvent.CHANGE, this);
+			_filterGroup.addEventHandler(ChangeEvent.CHANGE, this);
 		}
 		else // All
 		{
@@ -343,7 +349,7 @@ public final class SubList extends GridPane implements EventHandler<ChangeEvent>
 
 	private void _select(boolean r)
 	{
-		byte j = r ? -1 : _filterBar.indexof();
+		byte j = r ? -1 : _filterGroup.indexOf();
 		short n = 0;
 		_visibles.clear();
 

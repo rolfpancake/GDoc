@@ -7,8 +7,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Region;
 import data.Type;
 import events.HistoricEvent;
-import events.KeyboardManager;
-import ui.classes.Historic;
+import main.Launcher;
+import ui.content.Historic;
 
 
 public final class HistBar extends Region
@@ -17,7 +17,6 @@ public final class HistBar extends Region
 
 	private Historic _historic;
 	private ArrayList<HistButton> _buttons;
-	private KeyboardManager _keyboard;
 
 	private EventHandler<HistoricEvent> _addedHandler = new EventHandler<HistoricEvent>()
 	{
@@ -68,8 +67,6 @@ public final class HistBar extends Region
 	@Override
 	protected void layoutChildren()
 	{
-		if (_keyboard == null) _keyboard = KeyboardManager.GET_MANAGER(this);
-
 		int n = super.getChildren().size();
 		double w = super.getWidth() / n;
 		double x = 0;
@@ -98,7 +95,7 @@ public final class HistBar extends Region
 	{
 		e.consume();
 		HistButton b = (HistButton) e.getSource();
-		if (b.isSelected() || (_keyboard != null && !_keyboard.isEmpty())) return;
+		if (b.isSelected() || !Launcher.KEYBOARD.isEmpty()) return;
 		_buttons.get(_historic.getIndex()).select(false);
 		b.select(true);
 		_historic.setIndex((byte) _buttons.indexOf(b));

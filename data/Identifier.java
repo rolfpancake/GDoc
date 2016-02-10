@@ -62,7 +62,7 @@ abstract public class Identifier extends Described
 	/**
 	 * Récupére le groupe.
 	 *
-	 * @return Un objet UIGroup ou null
+	 * @return Un objet Group ou null
 	 */
 	@Nullable
 	public final Group getGroup() { return _group.get(); }

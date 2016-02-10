@@ -17,8 +17,7 @@ import exceptions.NullArgumentException;
 public final class XML
 {
 	static private final String _TAG_PATTERN = "[<>'\"&]";
-	static private final String[] _ESCAPING = {"<", "&lt;", ">", "&gt;", "\"", "&quot;", "'", "&apo;",
-											   "&", "&amp;"};
+	static private final String[] _ESCAPING = {"<", "&lt;", ">", "&gt;", "\"", "&quot;", "'", "&apo;", "&", "&amp;"};
 
 	private String _tag;
 	private ArrayList<XML> _children;
@@ -173,7 +172,7 @@ public final class XML
 
 
 	/**
-	 * Récupère le premier nœud enfant par son nom de balise.
+	 * Récupére le premier nœud enfant par son nom de balise.
 	 * Cette méthode est utile quand on sait qu'un nœud ne contient, ou ne devrait contenir, qu'un seul enfant
 	 * portant ce nom parmi d'autres enfants de nom différent.
 	 *
@@ -213,7 +212,7 @@ public final class XML
 
 
 	/**
-	 * Récupère l'état du nœud.
+	 * Récupére l'état du nœud.
 	 * 0: non parsé, 1: attributs parsés, 2: nœuds parsés, 3: attributs et nœuds parsés
 	 */
 	public byte getState() { return _state; }
@@ -223,7 +222,7 @@ public final class XML
 
 
 	/**
-	 * Récupère la valeur du nœud.
+	 * Récupére la valeur du nœud.
 	 *
 	 * @return La valeur du nœud ou une chaîne vide si le nœud est terminal, ou null si le nœud est parent
 	 */
@@ -300,7 +299,7 @@ public final class XML
 
 
 	/**
-	 * Récupère l'occurrence sous la forme d'une chaîne de caractères indentée et non échappée.
+	 * Récupére l'occurrence sous la forme d'une chaîne de caractères indentée et non échappée.
 	 *
 	 * @return Une chaîne de caractères
 	 */
@@ -312,7 +311,7 @@ public final class XML
 
 
 	/**
-	 * Récupère l'occurrence sous la forme d'une chaîne de caractères échappée.
+	 * Récupére l'occurrence sous la forme d'une chaîne de caractères échappée.
 	 *
 	 * @param indent Indenter
 	 * @return Une chaîne de caractères XML
@@ -408,7 +407,7 @@ public final class XML
 
 
 	/**
-	 * Récupère une chaîne de caractères indentée échappée.
+	 * Récupére une chaîne de caractères indentée échappée.
 	 *
 	 * @param t Tabulations antérieures (null pour aucunes)
 	 * @param e Échapper
